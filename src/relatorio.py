@@ -24,12 +24,69 @@ def _pct(valor: float) -> str:
     return f"{valor:.2%}".replace(".", ",")
 
 
+def _memoria_operacional(op: dict) -> pd.DataFrame:
+    linhas = [
+        ("Margem de juros média |II - IE|", op["margem_juros_media"], "R$"),
+        ("Teto: 2,25% x ativos rentáveis médios", op["teto_ildc"], "R$"),
+        ("ILDC — juros, arrendamento e participações", op["ILDC"], "R$"),
+        ("SC — serviços", op["SC"], "R$"),
+        ("FC — financeiro", op["FC"], "R$"),
+        ("BI — Indicador de Negócios", op["BI"], "R$"),
+        ("BIC — Indicador de Negócios Ponderado", op["BIC"], "R$"),
+        ("LC — componente de perdas (média 10 anos x 6)", op["LC"], "R$"),
+        ("ILM calculado ln(e - 1 + (LC/BIC)^0,8)", op["ILM_calculado"], "x"),
+        (f"ILM aplicado (segmento {op['segmento']})", op["ILM_aplicado"], "x"),
+        ("Fator F", op["F"], "%"),
+        ("RWAOPAD integral = BIC x ILM / F", op["RWAOPAD_integral"], "R$"),
+        (f"RWAOPAD apurado ({op['regra_transicao']})", op["RWAOPAD"], "R$"),
+        ("Referência: RWAOPAD se o ILM calculado fosse aplicado", op["RWAOPAD_se_ILM_calculado"], "R$"),
+    ]
+    return pd.DataFrame(linhas, columns=["Item", "Valor", "Unidade"])
+
+
+def _memoria_pagamentos(sp: dict) -> pd.DataFrame:
+    if not sp["aplicavel"]:
+        return pd.DataFrame([("Instituição não sujeita ao RWASP", 0.0, "R$")],
+                            columns=["Item", "Valor", "Unidade"])
+    linhas = [
+        ("Média mensal de pagamentos e transferências", sp["media_pagamentos_transferencias"], "R$"),
+        ("Média mensal do saldo de moeda eletrônica", sp["media_saldo_moeda_eletronica"], "R$"),
+        ("Média mensal de transações credenciadas", sp["media_transacoes_credenciadas"], "R$"),
+        ("Média mensal de transações iniciadas", sp["media_transacoes_iniciadas"], "R$"),
+        ("MOE — pagamentos e transferências (0,2%)", sp["MOE_pagamentos"], "R$"),
+        ("MOE — moeda eletrônica (1%)", sp["MOE_saldo"], "R$"),
+        ("ADQ — credenciamento (2%)", sp["ADQ"], "R$"),
+        ("PISP — iniciação de pagamento (1,5%)", sp["PISP"], "R$"),
+        ("MOE + ADQ + PISP", sp["total_componentes"], "R$"),
+        ("RWASP = (MOE + ADQ + PISP) / F", sp["RWASP"], "R$"),
+    ]
+    return pd.DataFrame(linhas, columns=["Item", "Valor", "Unidade"])
+
+
+def _imprimir_memoria(titulo: str, memoria: pd.DataFrame) -> None:
+    print(f"\n{titulo}")
+    for _, r in memoria.iterrows():
+        if r["Unidade"] == "R$":
+            valor = _brl(r["Valor"])
+        elif r["Unidade"] == "%":
+            valor = _pct(r["Valor"])
+        else:
+            valor = f"{r['Valor']:.4f}".replace(".", ",")
+        print(f"  {r['Item']:<58} {valor:>20}")
+
+
 def exibir_relatorio(carteira_com_rwa: pd.DataFrame, parcelas_rwa: dict, capital: dict,
-                     avaliacao: pd.DataFrame, capacidade: float, aporte: float) -> None:
-    linha = "=" * 78
+                     avaliacao: pd.DataFrame, capacidade: float, aporte: float,
+                     operacional: dict | None = None, pagamentos: dict | None = None) -> None:
+    linha = "=" * 82
     print(linha)
     print("CAPITALRISKBR — REQUERIMENTO DE CAPITAL (Res. CMN 4.958/2021)")
     print(linha)
+
+    if operacional:
+        _imprimir_memoria("Risco operacional — RWAOPAD (Res. BCB 356/2023):", _memoria_operacional(operacional))
+    if pagamentos:
+        _imprimir_memoria("Serviços de pagamento — RWASP (Res. BCB 202/2022):", _memoria_pagamentos(pagamentos))
 
     print("\nRWA por parcela:")
     for parcela, valor in parcelas_rwa.items():
@@ -58,7 +115,9 @@ def exibir_relatorio(carteira_com_rwa: pd.DataFrame, parcelas_rwa: dict, capital
 
 def exportar_excel(caminho: str | Path, carteira_com_rwa: pd.DataFrame, por_classe: pd.DataFrame,
                    parcelas_rwa: dict, capital: dict, avaliacao: pd.DataFrame,
-                   capacidade: float, aporte: float) -> Path:
+                   capacidade: float, aporte: float, operacional: dict | None = None,
+                   pagamentos: dict | None = None, dre: pd.DataFrame | None = None,
+                   servicos: pd.DataFrame | None = None) -> Path:
     caminho = Path(caminho)
     caminho.parent.mkdir(parents=True, exist_ok=True)
 
@@ -87,6 +146,18 @@ def exportar_excel(caminho: str | Path, carteira_com_rwa: pd.DataFrame, por_clas
         composicao.to_excel(writer, sheet_name="Composição PR", index=False)
         carteira.to_excel(writer, sheet_name="Carteira", index=False)
         por_classe.to_excel(writer, sheet_name="RWA por classe", index=False)
+        if operacional:
+            _memoria_operacional(operacional).to_excel(writer, sheet_name="Risco Operacional", index=False)
+            if dre is not None:
+                dre.to_excel(writer, sheet_name="DRE Operacional", index=False)
+            perdas = operacional["perdas"].rename(columns={
+                "na_janela": "Na janela de 10 anos", "acima_limiar": "Acima de R$ 500 mil",
+                "considerada": "Considerada no LC"})
+            perdas.to_excel(writer, sheet_name="Perdas Operacionais", index=False)
+        if pagamentos:
+            _memoria_pagamentos(pagamentos).to_excel(writer, sheet_name="Serviços de Pagamento", index=False)
+            if servicos is not None:
+                servicos.to_excel(writer, sheet_name="Volumes Pagamento", index=False)
 
     _formatar(caminho)
     return caminho
@@ -105,13 +176,24 @@ def _formatar(caminho: Path) -> None:
             celula.fill = PatternFill("solid", fgColor=QUASE_PRETO)
             celula.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
+        idx_unidade = cabecalhos.index("Unidade") if "Unidade" in cabecalhos else None
         for linha in ws.iter_rows(min_row=2):
+            unidade = linha[idx_unidade].value if idx_unidade is not None else None
             for celula in linha:
                 nome = cabecalhos[celula.column - 1]
                 celula.font = Font(name=FONTE, color=QUASE_PRETO)
                 celula.border = borda
+                if isinstance(celula.value, bool):
+                    celula.value = "Sim" if celula.value else "Não"
+                    continue
                 if isinstance(celula.value, (int, float)):
-                    if nome in colunas_pct:
+                    if unidade == "x" and nome == "Valor":
+                        celula.number_format = "0.0000"
+                    elif unidade == "%" and nome == "Valor":
+                        celula.number_format = FORMATO_PCT
+                    elif nome in {"ano"}:
+                        celula.number_format = "0"
+                    elif nome in colunas_pct:
                         celula.number_format = FORMATO_PCT
                     elif nome not in {"id_operacao"}:
                         celula.number_format = FORMATO_REAIS

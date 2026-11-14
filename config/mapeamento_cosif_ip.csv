@@ -1,0 +1,36 @@
+prefixo,destino,classe,fcc,moeda_estrangeira,observacao
+61,capital_principal,,,,Patrimônio líquido
+64,excluido,,,,Participação de não controladores
+7,resultado,,,,Contas de resultado credoras
+8,resultado,,,,Contas de resultado devedoras
+25,deducao_intangivel,,,,"Intangível (art. 4º, II, Res. BCB 198)"
+18825,dta,,,,"Créditos tributários (art. 4º, VI e VII) — deduzidos integralmente"
+18882,deducao_atuarial,,,,"Ativo atuarial (art. 4º, III)"
+212,deducao_participacoes,,,,"Participações em entidades não consolidadas (art. 4º, IV)"
+111,exposicao,reduzido_i,,,Caixa
+112,exposicao,reduzido_ii,,,Depósitos bancários
+113,exposicao,reduzido_i,,,Reservas no Banco Central
+115,exposicao,reduzido_ii,,1,Disponibilidades em moeda estrangeira
+119,exposicao,reduzido_i,,,Numerário em trânsito
+12,exposicao,reduzido_ii,,,Aplicações interfinanceiras
+13110,exposicao,reduzido_i,,,Renda fixa livre — premissa: títulos públicos federais
+13115,exposicao,padrao,,,Cotas de fundos
+13120,exposicao,padrao,,,Renda variável
+132,exposicao,reduzido_ii,,,Vinculados a recompras
+133,exposicao,padrao,,,Derivativos
+134,exposicao,reduzido_i,,,Vinculados ao Banco Central
+136,exposicao,reduzido_ii,,,Vinculados a prestação de garantias
+137,exposicao,reduzido_ii,,,Objeto de compromissadas
+141,excluido,,,,"Interdependências e cheques em compensação (art. 4º, § 2º, II e III, Res. BCB 437)"
+142,exposicao,reduzido_i,,,Créditos vinculados ao Banco Central (inclui depósitos de moeda eletrônica)
+16,exposicao,reduzido_iii,,,Operações de crédito
+17,exposicao,reduzido_iii,,,Arrendamento
+181,exposicao,reduzido_iii,,,Operações com característica de crédito
+18,exposicao,padrao,,,Outros créditos
+19,exposicao,padrao,,,Outros valores e bens
+22,exposicao,padrao,,,Imobilizado de uso (líquido)
+334,excluido,,,,"Compromissos de crédito — excluídos para IP/Tipo 2 (art. 4º, § 2º, VIII, Res. BCB 437)"
+33510,exposicao_off,reduzido_iii,1.00,,Garantias financeiras prestadas
+30971,base_moe_transacoes,,,,Transações de pagamento — saldo médio
+30969,base_moe_saldo,,,,Conta de pagamento pré-paga — saldo médio
+211,deducao_participacoes,,,,"Investimentos no exterior (art. 4º, IV)"

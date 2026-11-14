@@ -3,3 +3,7 @@ __pycache__/
 output/
 .venv/
 .pytest_cache/
+# Dados de instituições reais: ficam só na máquina local
+data/balancetes/*
+!data/balancetes/LEIA-ME.md
+config/instituicoes.local.toml

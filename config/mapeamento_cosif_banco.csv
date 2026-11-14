@@ -1,0 +1,65 @@
+prefixo,destino,classe,fcc,moeda_estrangeira,observacao
+61,capital_principal,,,,"Patrimônio líquido (capital, reservas, ajustes, lucros/prejuízos, ações em tesouraria)"
+64,excluido,,,,Participação de não controladores — premissa: não computada no CP
+7,resultado,,,,Contas de resultado credoras
+8,resultado,,,,Contas de resultado devedoras
+43910,instrumentos_capital,,,,Títulos de dívida elegíveis a capital (Capital Complementar + Nível II)
+30981,nivel_2_autorizado,,,,Controle: instrumentos de Nível II autorizados
+25,deducao_intangivel,,,,Intangível e ágio (Res. CMN 4.955)
+18825,dta,,,,Créditos tributários — tratamento por parâmetro da instituição
+18882,deducao_atuarial,,,,Ativo atuarial de fundo de pensão
+212,participacoes,,,,"Participações em coligadas/controladas — regra dos 10% do CP, excedente deduzido, restante 250%"
+111,exposicao,soberano_bcb,,,Caixa
+112,exposicao,instituicao_financeira,,,Depósitos bancários
+113,exposicao,soberano_bcb,,,Reservas livres no Banco Central
+11520,exposicao,instituicao_financeira,,1,Depósitos no exterior em moeda estrangeira
+11540,exposicao,soberano_bcb,,1,Disponibilidades em moeda estrangeira (espécie)
+119,exposicao,soberano_bcb,,,Numerário em trânsito
+121,exposicao,compromissada_lastro_publico,,,Revendas a liquidar — premissa: lastro em títulos públicos federais
+122,exposicao,instituicao_financeira,,,Depósitos interfinanceiros
+126,exposicao,instituicao_financeira,,1,Aplicações em moedas estrangeiras
+13110,exposicao,soberano_bcb,,,Títulos de renda fixa livres — premissa: títulos públicos federais
+13115,exposicao,outros_ativos,,,Cotas de fundos
+13120,exposicao,acoes_e_participacoes,,,Renda variável
+13185,exposicao,corporativo,,1,TVM no exterior
+132,exposicao,soberano_bcb,,,Vinculados a recompras
+133,exposicao,derivativos,,,"Derivativos (valor positivo) — premissa simplificada, sem SA-CCR"
+134,exposicao,soberano_bcb,,,Vinculados ao Banco Central
+136,exposicao,soberano_bcb,,,Vinculados a garantias
+137,exposicao,soberano_bcb,,,Objeto de compromissadas com livre movimentação
+1411,exposicao,soberano_bcb,,,Cheques e papéis em compensação
+1412,exposicao,soberano_bcb,,,Cheques e papéis em compensação
+1413,exposicao,soberano_bcb,,,Cheques e papéis em compensação
+1414,exposicao,instituicao_financeira,,,Recebimentos de outros participantes
+14150,exposicao,instituicao_financeira,,,Transações de pagamento a receber
+142,exposicao,soberano_bcb,,,Créditos vinculados ao Banco Central / SFH
+146,exposicao,corporativo,,,Outras operações com característica de crédito
+149,exposicao,corporativo,,,Provisões (redutoras)
+1611,exposicao,varejo,,,Adiantamentos a depositantes
+1612,exposicao,varejo,,,Empréstimos — premissa: predominância varejo
+1613,exposicao,corporativo,,,Direitos creditórios descontados
+162,exposicao,corporativo,,,Financiamentos
+163,exposicao,corporativo,,,Financiamentos rurais
+1641,exposicao,imobiliario_comercial,,,Financiamento imobiliário não residencial
+1643,exposicao,imobiliario_residencial,,,Financiamento imobiliário residencial
+1644,exposicao,imobiliario_residencial,,,Imobiliário — carteira de ativos LIG
+169,exposicao,corporativo,,,Provisões (redutoras)
+17,exposicao,corporativo,,,Arrendamento mercantil
+181,exposicao,corporativo,,,"Operações com característica de crédito (ACC, títulos, direitos creditórios)"
+18120,exposicao,corporativo,,1,Adiantamento de contrato de câmbio
+185,exposicao,soberano_bcb,,,Tesouro Nacional
+18802,exposicao,soberano_bcb,,,Adiantamentos ao FGC
+18830,exposicao,outros_ativos,,1,Valores a receber em moeda estrangeira
+18879,exposicao,varejo,,,Recebíveis de transações de pagamento — premissa: varejo
+18,exposicao,outros_ativos,,,Outros créditos
+19,exposicao,outros_ativos,,,Outros valores e bens
+22,exposicao,outros_ativos,,,Imobilizado de uso (líquido)
+30110,exposicao_off,corporativo,0.20,,Créditos abertos para importação
+30120,exposicao_off,instituicao_financeira,0.20,,Créditos de exportação confirmados
+33410,exposicao_off,corporativo,0.40,,Compromissos de crédito não canceláveis
+33420,exposicao_off,varejo,0.10,,Compromissos de crédito canceláveis (limites)
+33510,exposicao_off,corporativo,1.00,,Garantias financeiras prestadas
+30971,base_moe_transacoes,,,,Transações de pagamento — saldo médio
+30969,base_moe_saldo,,,,Conta de pagamento pré-paga — saldo médio
+211,participacoes,,,,Investimentos/dependências no exterior — regra dos 10% do CP
+143,exposicao,instituicao_financeira,,,Repasses interfinanceiros

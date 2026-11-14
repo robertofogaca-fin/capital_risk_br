@@ -1,0 +1,66 @@
+prefixo,componente,observacao
+711,ii,Rendas de operações de crédito e arrendamento
+714,ii,Rendas de aplicações interfinanceiras
+71510,ii,Rendas de títulos de renda fixa
+71513,ii,Rendas de COE
+71515,ii,Rendas de TVM no exterior
+71540,ii,Rendas de fundos de investimento
+716,ii,Rendas de outras operações com característica de crédito
+71910,ii,Rendas de créditos adquiridos em cessão
+71918,ii,Rendas por antecipação de transações de pagamento
+71940,ii,Rendas de aplicações no exterior
+7196,ii,Rendas de créditos vinculados (Banco Central/SFH)
+71520,di,Rendas de renda variável — premissa: dividendos
+717,fi,Receitas de prestação de serviços e tarifas
+71970,fi,Rendas de garantias prestadas
+71930,ooi,Recuperação de encargos e despesas
+71984,ooi,Rendas de direitos creditórios de ações judiciais
+71988,ooi,Rendas de outros ativos não financeiros
+71999,ooi,Outras rendas operacionais
+71575,fin,Lucros com títulos de renda fixa
+7158,fin,Rendas com derivativos
+71915,fin,Lucros na venda de ativos financeiros
+71916,fin,Lucro na compra e venda de moeda estrangeira
+71917,fin,Rendas de disponibilidades em moeda estrangeira
+71991,fin,Variação cambial
+71993,fin,Ajuste a valor justo
+71994,fin,Ajuste de hedge
+811,ie,Despesas de captação
+812,ie,Despesas de empréstimos e repasses
+813,ie,Despesas de arrendamento
+81912,ie,Despesas de operações vinculadas à cessão
+81950,ie,Despesas de cessão de crédito
+81952,ie,Descontos concedidos em renegociações
+8152,fin,Prejuízos com renda fixa
+8153,fin,Prejuízos com renda variável
+8154,fin,Ajuste a valor justo de fundos
+8155,fin,Despesas com derivativos
+81915,fin,Prejuízos na venda de ativos financeiros
+81916,fin,Prejuízo na compra e venda de moeda estrangeira
+81991,fin,Variação cambial
+81993,fin,Ajuste a valor justo
+81994,fin,Ajuste de hedge
+81754,fe,Despesas de serviços do sistema financeiro
+81919,fe,Despesas com serviços associados a transações de pagamento
+81996,fe,Custos de transação
+81988,ooe,Despesas de outros ativos não financeiros
+81990,ooe,Atualização de impostos e contribuições
+81998,ooe,Despesas com fraudes
+81999,ooe,Outras despesas operacionais
+718,excluido,Equivalência patrimonial e ajustes de investimentos
+816,excluido,Equivalência patrimonial e ajustes de investimentos
+817,excluido,Despesas administrativas (art. 9º)
+818,excluido,"Depreciação, amortização e impairment (art. 9º)"
+8192,excluido,ISS (tributos — art. 9º)
+8193,excluido,PIS/COFINS (tributos — art. 9º)
+71920,excluido,Recuperação de créditos baixados (risco de crédito)
+71992,excluido,Reversão de provisão para risco de crédito
+81992,excluido,Provisão para risco de crédito
+71995,excluido,Reversão de provisões passivas (art. 9º)
+81995,excluido,Provisões passivas (art. 9º)
+73,excluido,Receitas não operacionais
+83,excluido,Despesas não operacionais
+79,excluido,Tributos sobre o lucro
+89,excluido,Tributos e participações sobre o lucro
+712,ii,Rendas de arrendamento mercantil
+7198,ii,Rendas de repasses interfinanceiros

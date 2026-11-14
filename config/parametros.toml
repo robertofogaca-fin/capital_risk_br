@@ -34,3 +34,87 @@ limite_cartao = 0.10
 limite_nao_utilizado = 0.40
 garantia_prestada = 1.00
 carta_credito_importacao = 0.20
+
+# ---------------------------------------------------------------------------
+# FASE 2 — Risco operacional (Res. BCB 356/2023) e serviços de pagamento
+# ---------------------------------------------------------------------------
+
+[instituicao]
+data_base = "2026-06-30"
+segmento = "S4"            # S1, S2, S3 ou S4 (S5 usa metodologia simplificada, fora do escopo)
+sujeita_rwasp = true       # conglomerado que presta serviços de pagamento (Res. CMN 5.049/2022)
+s3_opta_ilm_calculado = false  # S3 só pode optar a partir de 2028, com autorização do BCB (art. 12)
+
+[risco_operacional]
+teto_ildc_sobre_iea = 0.0225   # art. 6º: |II - IE| limitado a 2,25% dos ativos rentáveis
+multiplicador_lc = 6           # art. 11: média anual de perdas x 6 (Basileia usa 15)
+janela_perdas_anos = 10        # art. 11
+limiar_perda_evento = 500000   # art. 11, § 3º: só eventos com perda líquida >= R$ 500 mil
+expoente_ilm = 0.8             # art. 10
+
+# Art. 4º: BIC = soma marginal por faixa do BI (limite_superior em R$; 0 = sem limite)
+[[risco_operacional.faixas_bic]]
+limite_superior = 5_000_000_000
+coeficiente = 0.12
+[[risco_operacional.faixas_bic]]
+limite_superior = 150_000_000_000
+coeficiente = 0.15
+[[risco_operacional.faixas_bic]]
+limite_superior = 0
+coeficiente = 0.18
+
+# Art. 19: transição facultativa quando o novo RWAOPAD supera o de 31/12/2024
+[risco_operacional.transicao]
+aplicar = true
+rwaopad_dez2024 = 1_900_000
+percentual_por_ano = { "2025" = 0.25, "2026" = 0.50, "2027" = 0.75 }
+
+[servicos_pagamento]           # Res. BCB 202/2022 — conferir redação vigente
+moe_pagamentos_transferencias = 0.002  # 0,2% da média mensal de pagamentos e transferências
+moe_saldo_moeda_eletronica = 0.01      # 1% da média mensal de moeda eletrônica emitida
+adq_credenciamento = 0.02              # 2% da média mensal de transações credenciadas
+pisp_iniciacao = 0.015                 # 1,5% da média mensal de transações iniciadas (desde 2025)
+meses_media = 12
+
+# ---------------------------------------------------------------------------
+# BALANCETE COSIF — parâmetros do cálculo a partir de dados públicos
+# ---------------------------------------------------------------------------
+
+# FPR por classe para bancos/conglomerados (Res. BCB 229 simplificada por conta Cosif)
+[balancete_banco.fpr]
+soberano_bcb = 0.00
+compromissada_lastro_publico = 0.00   # premissa: colateral em títulos públicos federais
+instituicao_financeira = 0.40         # na norma: 20% a 150% conforme categoria e prazo
+corporativo = 1.00
+varejo = 0.75
+imobiliario_residencial = 0.50        # na norma: conforme LTV
+imobiliario_comercial = 1.00
+derivativos = 1.00                    # premissa: valor positivo contábil, sem SA-CCR
+outros_ativos = 1.00
+acoes_e_participacoes = 2.50
+dta_nao_deduzido = 1.00               # créditos tributários convertíveis (Lei 12.838/2013)
+
+[balancete_banco]
+limiar_deducao_cp = 0.10              # participações significativas: excedente a 10% do CP é deduzido
+
+# Regime de instituição de pagamento (Res. BCB 198/2022 e 437/2024)
+[instituicao_pagamento]
+fator_f_linha = 0.12                  # art. 6º, § 1º, Res. BCB 198
+fator_d_rwasp = 0.08                  # art. 7º, § 1º
+moe_transacoes = 0.002
+moe_saldo = 0.01
+cpos = 0.04
+adq = 0.02
+pisp = 0.015
+fpr_rwacamsimp = 1.00                 # premissa: exposição cambial líquida x 100%
+
+[instituicao_pagamento.fpr]           # art. 6º, Res. BCB 437
+reduzido_i = 0.00
+reduzido_ii = 0.35
+reduzido_iii = 0.75
+padrao = 1.00
+# elevado = 100% / F' (calculado)
+
+[saida]
+anonimizar = true    # relatórios exibem o apelido e omitem nome e CNPJ da instituição
+fonte = "Balancete Cosif (modelos 4010 e 4060) — dados públicos do Banco Central do Brasil"

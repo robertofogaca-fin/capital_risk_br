@@ -1,0 +1,28 @@
+# Modelo de cadastro de instituições. Copie para config/instituicoes.local.toml
+# (ignorado pelo Git) e use o CNPJ base de 8 dígitos como chave.
+# O balancete não informa: segmento, ACP sistêmico, parcela dedutível dos créditos
+# tributários, RWA de mercado, volumes de CPOS/ADQ/PISP e índices divulgados.
+
+[padrao]
+apelido = ""                    # vazio: apelido genérico pelo regime
+segmento = "S4"
+acp_sistemico = 0.0
+dta_percentual_deduzido = 0.0   # bancos: parcela dos créditos tributários dependente de lucro futuro
+rwampad = 0.0                   # risco de mercado não é estimável pelo balancete
+volumes_ip = { cpos = 0.0, adq = 0.0, pisp = 0.0 }   # médias mensais de 12 meses (não contábeis)
+
+["00000000"]
+apelido = "Banco múltiplo S1"
+segmento = "S1"
+acp_sistemico = 0.01            # D-SIB — conferir valor vigente divulgado pelo BCB
+rwampad = 0.0
+
+["00000000".publicado]          # índices divulgados para a mesma data-base (comparação)
+data_base = "202603"
+documento = "4060"
+capital_principal = 0.0
+patrimonio_referencia = 0.0
+
+["11111111"]
+apelido = "Instituição de pagamento A"
+volumes_ip = { cpos = 0.0, adq = 0.0, pisp = 0.0 }
