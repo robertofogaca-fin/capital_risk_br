@@ -1,0 +1,44 @@
+# Cenários de estresse — CapitalRiskBR (Fase 3)
+# Choques aplicados sobre a posição da data-base. Valores em fração (0.10 = 10%).
+#
+#   crescimento_credito     aumento das exposições de crédito (RWA de crédito)
+#   perda_credito           perda adicional sobre a carteira de crédito (provisão), líquida de tributos
+#   choque_juros            alta paralela das taxas (0.03 = +300 bps) sobre a exposição a valor justo
+#   perda_cp                prejuízo operacional como % do capital (Capital Principal ou PRIP)
+#   crescimento_pagamentos  aumento do volume de serviços de pagamento (RWASP)
+
+[premissas]
+aliquota_tributos_banco = 0.45   # IR 25% + CSLL 20% (bancos)
+aliquota_tributos_ip = 0.34      # IR 25% + CSLL 9% (premissa para IP)
+duration_carteira = 2.0          # anos — sensibilidade da exposição a valor justo
+
+[[cenarios]]
+nome = "Base"
+
+[[cenarios]]
+nome = "Crescimento da carteira (+20%)"
+crescimento_credito = 0.20
+
+[[cenarios]]
+nome = "Choque de juros (+300 bps)"
+choque_juros = 0.03
+
+[[cenarios]]
+nome = "Inadimplência (+3% de perda)"
+perda_credito = 0.03
+
+[[cenarios]]
+nome = "Prejuízo operacional (10% do capital)"
+perda_cp = 0.10
+
+[[cenarios]]
+nome = "Crescimento de pagamentos (+30%)"
+crescimento_pagamentos = 0.30
+
+[[cenarios]]
+nome = "Severo combinado"
+crescimento_credito = 0.10
+choque_juros = 0.03
+perda_credito = 0.03
+perda_cp = 0.05
+crescimento_pagamentos = 0.15

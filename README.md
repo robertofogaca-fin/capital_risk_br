@@ -1,5 +1,7 @@
 # CapitalRiskBR
 
+[![testes](https://github.com/robertofogaca-fin/capital_risk_br/actions/workflows/testes.yml/badge.svg)](https://github.com/robertofogaca-fin/capital_risk_br/actions/workflows/testes.yml)
+
 Calculadora didática de **requerimento de capital regulatório** para instituições autorizadas pelo Banco Central do Brasil, seguindo o arcabouço de Basileia III como implementado no Brasil.
 
 ## O que calcula
@@ -99,6 +101,43 @@ O RWA implícito é praticamente o mesmo pelos dois índices, o que indica que a
 
 **Privacidade:** o repositório publica apenas a metodologia. Os arquivos de balancete e o cadastro por CNPJ ficam na máquina local (`.gitignore`), e os relatórios identificam cada instituição por um apelido genérico, sem nome nem CNPJ (`[saida].anonimizar` em `parametros.toml`).
 
+## Cenários de estresse (Fase 3)
+
+Cada relatório de balancete traz as abas **Estresse** e **Teste Reverso**. Os choques ficam em `config/cenarios.toml`:
+
+| Choque | Efeito |
+|---|---|
+| Crescimento da carteira | RWA de crédito × (1 + crescimento) |
+| Inadimplência | perda adicional × EAD de crédito × (1 − alíquota) sai do capital |
+| Choque de juros | Δ taxa × duration × exposição a valor justo × (1 − alíquota) sai do capital. A exposição vem das contas 32120000 e 32130000 (ativos a VJORA e VJR) menos 32180000 (passivos a VJR) |
+| Prejuízo operacional | % do capital |
+| Crescimento de pagamentos | RWASP × (1 + crescimento) |
+
+O **teste reverso** calcula a perda máxima absorvível e o crescimento máximo de RWA antes de violar o requerido (mínimo + ACP), com o nível de capital limitante.
+
+Quando há índice divulgado cadastrado, o estresse parte de uma **base calibrada**: o RWA estimado é escalado para o RWA implícito pelo índice de Basileia divulgado, e os choques medem a sensibilidade a partir da posição oficial.
+
+## Dashboard (Fase 4)
+
+```bash
+pip install -r requirements-app.txt
+streamlit run app.py
+```
+
+Painel no padrão visual RF Analytics, com balancetes de `data/balancetes/` ou enviados pela tela:
+
+- **Visão geral**: índices, RWA e comparação com o índice divulgado.
+- **Capital e RWA**: composição do capital, RWA por classe e Indicador de Negócios.
+- **Série histórica**: evolução dos índices e da composição do RWA.
+- **Estresse**: cenário personalizado com controles deslizantes, cenários configurados e teste reverso.
+- **Mapeamento e premissas**: premissas, conciliação, mapeamento conta a conta e download do Excel.
+
+> Se a instalação do Streamlit falhar numa versão muito recente do Python (pacotes como o `pyarrow` demoram a publicar versões prontas), crie um ambiente com o Python 3.13: `py -3.13 -m venv .venv`, ative-o e instale `requirements-app.txt`. O núcleo do projeto (`requirements.txt`) não depende do Streamlit.
+
+## Testes e integração contínua
+
+`python -m pytest` roda mais de 100 testes, com valores calculados à mão para cada fórmula. O GitHub Actions executa a suíte a cada push em Python 3.11, 3.12 e 3.13. Os testes com balancetes reais só rodam localmente, porque esses arquivos ficam fora do repositório.
+
 ## Como rodar
 
 ```bash
@@ -125,6 +164,10 @@ src/balancete_cosif.py       leitura, contas analíticas e conciliação
 src/capital_balancete.py     regimes banco e IP a partir do balancete
 src/relatorio_balancete.py   console e Excel do balancete
 src/serie_historica.py       série histórica, BI com média anual e gráficos
+src/estresse.py              cenários de estresse e teste reverso
+config/cenarios.toml         choques e premissas do estresse
+app.py                       dashboard Streamlit (tema em .streamlit/config.toml)
+.github/workflows/testes.yml CI: testes a cada push
 src/risco_credito.py         EAD e RWACPAD
 src/risco_operacional.py     BI, BIC, LC, ILM, transição e RWAOPAD
 src/servicos_pagamento.py    MOE, ADQ, PISP e RWASP
@@ -140,9 +183,9 @@ tests/                       testes com valores calculados à mão
 - ~~Fase 2~~: RWAOPAD (Res. BCB 356/2023) e RWASP (Res. BCB 202/2022).
 - ~~Balancete Cosif~~: estimativa para IP, banco e conglomerado a partir de dados públicos.
 - ~~Série histórica~~: BI com média anual a partir dos balancetes semestrais e evolução dos índices.
-- **Próximo**: comparação entre instituições, cenários de estresse (Fase 3) e dashboard (Fase 4).
-- **Fase 3**: RWAMPAD simplificado e cenários de estresse (choque de juros, crescimento da carteira, prejuízo). A Res. CMN 5.207/2025 altera a parcela de mercado a partir de 1º/1/2027.
-- **Fase 4**: dashboard em Streamlit e CI no GitHub Actions.
+- ~~Fase 3~~: cenários de estresse, base calibrada e teste reverso.
+- ~~Fase 4~~: dashboard em Streamlit e CI no GitHub Actions.
+- **Próximo**: comparação entre instituições da mesma data-base.
 
 ## Limitações
 

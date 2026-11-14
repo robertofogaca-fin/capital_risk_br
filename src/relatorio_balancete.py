@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.estresse import base_do_resultado, carregar_cenarios, executar, tabela_apresentacao, teste_reverso
 from src.relatorio import _brl, _formatar, _pct
 
 DESCRICAO_PARCELAS = {
@@ -22,6 +23,13 @@ DESCRICAO_PARCELAS = {
 def _slug(texto: str) -> str:
     texto = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode()
     return re.sub(r"[^a-z0-9]+", "_", texto.lower()).strip("_")
+
+
+def estresse(r: dict) -> dict:
+    cenarios = carregar_cenarios()
+    base = base_do_resultado(r)
+    return {"base": base, "tabela": executar(base, cenarios), "reverso": teste_reverso(base, cenarios["premissas"]),
+            "premissas": cenarios["premissas"]}
 
 
 def exibir(r: dict) -> None:
@@ -65,6 +73,17 @@ def exibir(r: dict) -> None:
                       f"| situação pelo divulgado: {c['situacao_divulgada']}")
             print(f"  RWA estimado: {_brl(r['parcelas']['RWA'])} — a diferença para o RWA implícito vem de "
                   "mitigadores, SA-CCR, FPR por contraparte e LTV, que o balancete não mostra.")
+
+    e = estresse(r)
+    principal = next(iter(e["base"]["niveis"]))
+    calibrada = e["base"]["calibracao_rwa"] != 1.0
+    print(f"\nCenários de estresse — {principal}"
+          + (f" (base calibrada ao índice divulgado: RWA x{e['base']['calibracao_rwa']:.2f})" if calibrada else "") + ":")
+    for _, c in e["tabela"].iterrows():
+        print(f"  {c['cenario']:<40} {_pct(c[f'indice::{principal}']):>7} ({c['variacao_pp']:+.2f} p.p.) | {c['situacao']}")
+    rv = e["reverso"]
+    print(f"  Teste reverso: perda máxima absorvível {_brl(rv['perda_maxima_absorvivel'])} "
+          f"(limitante: {rv['nivel_limitante']}) | RWA pode crescer {_pct(rv['crescimento_rwa_maximo_pct'])}")
 
     print("\nPremissas da estimativa:")
     for premissa in r["premissas"]:
@@ -141,6 +160,22 @@ def exportar(r: dict, pasta: str | Path) -> Path:
             ], ["Item", "Valor", "Unidade"]).to_excel(writer, sheet_name="Risco Operacional", index=False)
             bi["detalhe"].rename(columns={"saldo": "Saldo (R$)"}).to_excel(
                 writer, sheet_name="BI por conta", index=False)
+        e = estresse(r)
+        tabela_apresentacao(e["tabela"]).to_excel(writer, sheet_name="Estresse", index=False)
+        rv = e["reverso"]
+        _tabela([
+            ("Base do estresse", "calibrada ao índice divulgado" if e["base"]["calibracao_rwa"] != 1.0
+             else "estimativa do balancete", "x"),
+            ("Fator de calibração do RWA", e["base"]["calibracao_rwa"], "x"),
+            ("Nível limitante", rv["nivel_limitante"], "x"),
+            ("Perda máxima absorvível", rv["perda_maxima_absorvivel"], "R$"),
+            ("Perda de crédito equivalente (% da carteira)", rv["perda_credito_equivalente_pct"], "%"),
+            ("Crescimento máximo de RWA", rv["crescimento_rwa_maximo"], "R$"),
+            ("Crescimento máximo de RWA (%)", rv["crescimento_rwa_maximo_pct"], "%"),
+            ("Exposição a valor justo (choque de juros)", e["base"]["exposicao_juros"], "R$"),
+            ("EAD de crédito (inadimplência)", e["base"]["credito_ead"], "R$"),
+            ("Duration da carteira (anos)", e["premissas"]["duration_carteira"], "x"),
+        ], ["Item", "Valor", "Unidade"]).to_excel(writer, sheet_name="Teste Reverso", index=False)
         composicao.to_excel(writer, sheet_name="Composição do Capital", index=False)
         parcelas.to_excel(writer, sheet_name="RWA", index=False)
         por_classe.to_excel(writer, sheet_name="RWA por classe", index=False)

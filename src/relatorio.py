@@ -191,9 +191,11 @@ def _formatar(caminho: Path) -> None:
                         celula.number_format = "0.0000"
                     elif unidade == "%" and nome == "Valor":
                         celula.number_format = FORMATO_PCT
+                    elif str(nome).endswith("(p.p.)"):
+                        celula.number_format = "+0.00;-0.00;0.00"
                     elif nome in {"ano"}:
                         celula.number_format = "0"
-                    elif nome in colunas_pct:
+                    elif nome in colunas_pct or str(nome).startswith("Índice "):
                         celula.number_format = FORMATO_PCT
                     elif nome not in {"id_operacao"}:
                         celula.number_format = FORMATO_REAIS
