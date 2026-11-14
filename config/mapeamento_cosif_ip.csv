@@ -34,3 +34,4 @@ prefixo,destino,classe,fcc,moeda_estrangeira,observacao
 30971,base_moe_transacoes,,,,Transações de pagamento — saldo médio
 30969,base_moe_saldo,,,,Conta de pagamento pré-paga — saldo médio
 211,deducao_participacoes,,,,"Investimentos no exterior (art. 4º, IV)"
+15,excluido,,,,Relações interdependências

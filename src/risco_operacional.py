@@ -31,12 +31,14 @@ SEGMENTOS_VALIDOS = {"S1", "S2", "S3", "S4"}
 # Indicador de Negócios (BI)
 # ---------------------------------------------------------------------------
 
-def validar_dre(dre: pd.DataFrame) -> None:
+def validar_dre(dre: pd.DataFrame, periodos_exigidos: int | None = 3) -> None:
     faltantes = COLUNAS_DRE - set(dre.columns)
     if faltantes:
         raise ValueError(f"Colunas ausentes na DRE operacional: {', '.join(sorted(faltantes))}")
-    if len(dre) != 3:
+    if periodos_exigidos is not None and len(dre) != periodos_exigidos:
         raise ValueError("A DRE operacional deve ter exatamente 3 períodos anuais (art. 2º).")
+    if not 1 <= len(dre) <= 3:
+        raise ValueError("A DRE operacional deve ter de 1 a 3 períodos anuais.")
     if (dre["ativos_rentaveis_medios"] < 0).any():
         raise ValueError("Ativos rentáveis não podem ser negativos.")
     if (dre["receitas_servicos_pagamento"] > dre["receitas_servicos"]).any() or \
@@ -44,8 +46,9 @@ def validar_dre(dre: pd.DataFrame) -> None:
         raise ValueError("Serviços de pagamento não podem superar o total de serviços.")
 
 
-def calcular_componentes_bi(dre: pd.DataFrame, parametros: dict, sujeita_rwasp: bool) -> dict:
-    validar_dre(dre)
+def calcular_componentes_bi(dre: pd.DataFrame, parametros: dict, sujeita_rwasp: bool,
+                            periodos_exigidos: int | None = 3) -> dict:
+    validar_dre(dre, periodos_exigidos)
     teto = parametros["risco_operacional"]["teto_ildc_sobre_iea"]
 
     margem_juros = (dre["receitas_juros"] - dre["despesas_juros"]).abs().mean()

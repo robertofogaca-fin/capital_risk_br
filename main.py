@@ -4,6 +4,7 @@ Uso:
   python main.py                                   exemplo didático (data/*.csv)
   python main.py --balancete data/balancetes/X.CSV  estimativa a partir de balancete Cosif do BCB
   python main.py --balancete data/balancetes/       todos os balancetes da pasta
+  python main.py --serie data/balancetes/           série histórica por instituição e modelo
 """
 import argparse
 from pathlib import Path
@@ -43,6 +44,16 @@ def analisar_balancetes(caminho: Path) -> None:
         print(f"Relatório Excel: {saida.relative_to(RAIZ)}\n")
 
 
+def analisar_series(pasta: Path) -> None:
+    from src.serie_historica import agrupar, analisar_serie, exibir_serie, exportar_serie
+
+    parametros = carregar_parametros()
+    for itens in agrupar(pasta).values():
+        serie = analisar_serie(itens, parametros)
+        exibir_serie(serie)
+        print(f"Relatório Excel: {exportar_serie(serie, PASTA_SAIDA).relative_to(RAIZ)}\n")
+
+
 def exemplo_didatico() -> None:
     parametros = carregar_parametros()
 
@@ -79,8 +90,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="CapitalRiskBR — requerimento de capital regulatório")
     parser.add_argument("--balancete", type=Path,
                         help="arquivo CSV de balancete do BCB (4010/4060) ou pasta com vários")
+    parser.add_argument("--serie", type=Path,
+                        help="pasta com balancetes de várias datas-base: gera a série histórica")
     argumentos = parser.parse_args()
-    if argumentos.balancete:
+    if argumentos.serie:
+        analisar_series(argumentos.serie)
+    elif argumentos.balancete:
         analisar_balancetes(argumentos.balancete)
     else:
         exemplo_didatico()

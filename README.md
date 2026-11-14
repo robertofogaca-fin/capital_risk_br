@@ -73,6 +73,19 @@ Como funciona:
 4. **RWA**: crédito por classe de exposição; risco operacional pelo BI das contas de resultado (art. 9º da Res. BCB 356, com exclusões); RWASP pelas contas de controle de saldo médio 30971000 e 30969000.
 5. **Parâmetros por instituição** (`config/instituicoes.local.toml`, fora do Git; modelo em `config/instituicoes.exemplo.toml`): o que o balancete não traz (segmento, ACP sistêmico, parcela dedutível dos créditos tributários, RWA de mercado, volumes de CPOS/ADQ/PISP e índices divulgados para comparação).
 
+
+### Série histórica
+
+```bash
+python main.py --serie data/balancetes/
+```
+
+Agrupa os balancetes por instituição e modelo (4010/4060) e calcula capital, RWA e índices em cada data-base. O Excel `output/serie_<instituição>_<modelo>.xlsx` traz a tabela da série, um gráfico de evolução dos índices, um gráfico da composição do RWA e o BI por semestre.
+
+- **Indicador de Negócios com média anual (Res. BCB 356, arts. 2º e 6º)**: os balancetes de junho e dezembro trazem o resultado do semestre (as contas de resultado são zeradas nesses fechamentos). Cada período anual soma dois semestres, e os ativos rentáveis são a média dos dois saldos semestrais. Em cada data-base, usa o último fechamento semestral e até 3 períodos anuais completos. Sem histórico, anualiza o período corrente e registra a premissa.
+- **Mudança do plano de contas em 01/2025 (Res. CMN 4.966)**: balancetes até 12/2024 usam o Cosif anterior e são publicados até o 3º nível. O projeto aplica um mapeamento próprio (`config/legado/`), com premissas mais grossas: compromissos de crédito, títulos elegíveis a capital e créditos tributários não são identificáveis, e a carteira de câmbio é compensada (ativa − passiva). A série sinaliza a quebra.
+- Arquivos publicados com linhas duplicadas idênticas são tratados automaticamente; contas repetidas com saldos diferentes interrompem a leitura.
+
 ### Validação com um banco múltiplo S1 (conglomerado prudencial, 03/2026)
 
 | | Estimado | Divulgado | RWA implícito |
@@ -106,10 +119,12 @@ data/servicos_pagamento.csv  12 meses de volumes de pagamento (base do RWASP)
 data/rwa_outras_parcelas.csv RWAMPAD informado (até a Fase 3)
 data/balancetes/             balancetes Cosif públicos (4010 e 4060) — fora do Git
 config/mapeamento_cosif_*.csv regras conta Cosif -> destino regulatório (banco, IP e BI)
+config/legado/               mapeamentos do plano Cosif anterior a 2025 (nível 3)
 config/instituicoes.*.toml   parâmetros por CNPJ que o balancete não informa (local + exemplo)
 src/balancete_cosif.py       leitura, contas analíticas e conciliação
 src/capital_balancete.py     regimes banco e IP a partir do balancete
 src/relatorio_balancete.py   console e Excel do balancete
+src/serie_historica.py       série histórica, BI com média anual e gráficos
 src/risco_credito.py         EAD e RWACPAD
 src/risco_operacional.py     BI, BIC, LC, ILM, transição e RWAOPAD
 src/servicos_pagamento.py    MOE, ADQ, PISP e RWASP
@@ -124,7 +139,8 @@ tests/                       testes com valores calculados à mão
 - ~~Fase 1~~: RWA de crédito, composição do PR, mínimos e ACP.
 - ~~Fase 2~~: RWAOPAD (Res. BCB 356/2023) e RWASP (Res. BCB 202/2022).
 - ~~Balancete Cosif~~: estimativa para IP, banco e conglomerado a partir de dados públicos.
-- **Próximo**: série histórica (6 balancetes semestrais para o BI de 3 anos) e comparação entre instituições.
+- ~~Série histórica~~: BI com média anual a partir dos balancetes semestrais e evolução dos índices.
+- **Próximo**: comparação entre instituições, cenários de estresse (Fase 3) e dashboard (Fase 4).
 - **Fase 3**: RWAMPAD simplificado e cenários de estresse (choque de juros, crescimento da carteira, prejuízo). A Res. CMN 5.207/2025 altera a parcela de mercado a partir de 1º/1/2027.
 - **Fase 4**: dashboard em Streamlit e CI no GitHub Actions.
 

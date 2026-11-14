@@ -40,7 +40,7 @@ def balancete_banco(tmp_path):
         ("40000000", "Passivo", 1500), ("41510000", "DEPÓSITOS A PRAZO", 1500),
         ("60000000", "Patrimônio Líquido", 550), ("61110000", "CAPITAL", 550),
         ("70000000", "Resultado Credor", 120), ("71105000", "RENDAS DE EMPRÉSTIMOS", 100),
-        ("71705000", "RECEITAS POR SERVIÇOS", 20),
+        ("71799000", "RECEITAS DE OUTROS SERVIÇOS", 20),
         ("80000000", "Resultado Devedor", -70), ("81130000", "DESPESAS DE DEPÓSITOS A PRAZO", -40),
         ("81733000", "DESPESAS DE PESSOAL", -30),
     ]

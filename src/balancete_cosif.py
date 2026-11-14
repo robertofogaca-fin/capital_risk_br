@@ -59,6 +59,13 @@ def ler_balancete(caminho: str | Path) -> pd.DataFrame:
         "TAXONOMIA": "taxonomia", "CONTA": "conta", "NOME_CONTA": "nome_conta", "SALDO": "saldo",
     })
     df["nome_conta"] = df["nome_conta"].map(lambda t: re.sub(r"[\x00-\x1f\x7f]", " ", t)).str.strip()
+    # Alguns arquivos publicados repetem todas as linhas: descarta duplicatas idênticas
+    df = df.drop_duplicates().reset_index(drop=True)
+    divergentes = df[df["conta"].duplicated(keep=False)]
+    if not divergentes.empty:
+        raise ValueError(f"{caminho.name}: contas repetidas com saldos diferentes "
+                         f"({', '.join(sorted(set(divergentes['CONTA'] if 'CONTA' in divergentes else divergentes['conta'])))[:200]})")
+
     df["prefixo"] = df["conta"].map(prefixo_cosif)
     df["grupo"] = df["conta"].str[0]
 

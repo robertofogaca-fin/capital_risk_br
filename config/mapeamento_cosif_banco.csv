@@ -63,3 +63,5 @@ prefixo,destino,classe,fcc,moeda_estrangeira,observacao
 30969,base_moe_saldo,,,,Conta de pagamento pré-paga — saldo médio
 211,participacoes,,,,Investimentos/dependências no exterior — regra dos 10% do CP
 143,exposicao,instituicao_financeira,,,Repasses interfinanceiros
+1443,exposicao,instituicao_financeira,,,Correspondentes no país
+15,excluido,,,,Relações interdependências (entre dependências da própria instituição)

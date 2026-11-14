@@ -17,7 +17,7 @@ import pandas as pd
 
 from src.basileia import avaliar_requerimentos, capacidade_crescimento_rwa, capital_necessario
 from src.balancete_cosif import analiticas, conciliar, identificacao, ler_balancete
-from src.risco_operacional import calcular_bic
+from src.risco_operacional import calcular_bic, calcular_componentes_bi
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -29,6 +29,8 @@ PASTA_CONFIG = RAIZ / "config"
 
 # Ativos rentáveis (IEA) para o teto do ILDC
 PREFIXOS_IEA = ("12", "13110", "132", "134", "136", "137", "142", "16", "17", "181")
+PREFIXOS_IEA_LEGADO = ("12", "131", "132", "134", "136", "137", "142", "16", "17", "181")
+INICIO_COSIF_ATUAL = 202501  # Res. CMN 4.966/2021: novo plano de contas a partir de jan/2025
 CONTAS_IGNORADAS = ("3999999",)  # linha de total geral do ativo publicada no grupo 3
 
 
@@ -36,8 +38,15 @@ CONTAS_IGNORADAS = ("3999999",)  # linha de total geral do ativo publicada no gr
 # Configuração
 # ---------------------------------------------------------------------------
 
-def carregar_mapeamento(nome: str) -> pd.DataFrame:
-    mapa = pd.read_csv(PASTA_CONFIG / nome, dtype=str, encoding="utf-8").fillna("")
+def versao_cosif(data_base: str) -> str:
+    return "legado" if int(str(data_base)[:6]) < INICIO_COSIF_ATUAL else "atual"
+
+
+def carregar_mapeamento(nome: str, versao: str = "atual") -> pd.DataFrame:
+    caminho = PASTA_CONFIG / "legado" / nome
+    if versao != "legado" or not caminho.exists():
+        caminho = PASTA_CONFIG / nome
+    mapa = pd.read_csv(caminho, dtype=str, encoding="utf-8").fillna("")
     return mapa.assign(tamanho=mapa["prefixo"].str.len()).sort_values("tamanho", ascending=False)
 
 
@@ -86,10 +95,19 @@ def anonimizar(ident: dict, regime: str, inst: dict, parametros: dict) -> dict:
 # Mapeamento conta a conta
 # ---------------------------------------------------------------------------
 
+_INDICES: dict[int, dict] = {}
+
+
 def _casar(conta: str, mapa: pd.DataFrame) -> pd.Series | None:
-    for _, linha in mapa.iterrows():
-        if conta.startswith(linha["prefixo"]):
-            return linha
+    """Regra de prefixo mais longo (busca por dicionário, do prefixo mais longo ao mais curto)."""
+    indice = _INDICES.get(id(mapa))
+    if indice is None or indice["mapa"] is not mapa:
+        indice = {"mapa": mapa, "regras": {linha["prefixo"]: linha for _, linha in mapa.iterrows()}}
+        _INDICES[id(mapa)] = indice
+    for tamanho in range(len(conta), 0, -1):
+        regra = indice["regras"].get(conta[:tamanho])
+        if regra is not None:
+            return regra
     return None
 
 
@@ -126,42 +144,120 @@ def meses_no_semestre(data_base: str) -> int:
     return mes - 6 if mes > 6 else mes
 
 
-def calcular_bi_balancete(contas: pd.DataFrame, data_base: str, parametros: dict) -> dict:
-    mapa = carregar_mapeamento("mapeamento_cosif_bi.csv")
+def somas_bi(contas: pd.DataFrame, data_base: str) -> dict:
+    """Somas por componente do BI das contas de resultado e saldo de ativos rentáveis (IEA)."""
+    versao = versao_cosif(data_base)
+    mapa = carregar_mapeamento("mapeamento_cosif_bi.csv", versao)
     resultado = contas[contas["grupo"].isin(["7", "8"])].copy()
     resultado["componente"] = [
         (r["componente"] if (r := _casar(c, mapa)) is not None else "nao_mapeado")
         for c in resultado["conta"]
     ]
-    meses = meses_no_semestre(data_base)
-    fator = 12 / meses
     soma = resultado.groupby("componente")["saldo"].sum()
-
-    def anual(chave):
-        return float(soma.get(chave, 0.0)) * fator
-
-    iea = float(contas.loc[contas["conta"].str.startswith(PREFIXOS_IEA)
+    prefixos = PREFIXOS_IEA_LEGADO if versao == "legado" else PREFIXOS_IEA
+    iea = float(contas.loc[contas["conta"].str.startswith(prefixos)
                            & ~contas["conta"].str.startswith("133"), "saldo"].sum())
-    margem = abs(anual("ii") + anual("ie"))  # despesas vêm negativas
-    teto = parametros["risco_operacional"]["teto_ildc_sobre_iea"] * iea
-    ildc = min(margem, teto) + anual("di")
-    sc = max(anual("fi"), abs(anual("fe"))) + max(anual("ooi"), abs(anual("ooe")))
-    fc = abs(anual("fin"))
-    return {
-        "meses_apurados": meses, "fator_anualizacao": fator, "IEA": iea,
-        "margem_juros_anual": margem, "teto_ildc": teto, "ILDC": ildc, "SC": sc, "FC": fc,
-        "BI": ildc + sc + fc,
-        "contas_nao_mapeadas": resultado.loc[resultado["componente"] == "nao_mapeado",
-                                             ["conta", "nome_conta", "saldo"]],
+    somas = {c: float(soma.get(c, 0.0)) for c in ("ii", "ie", "di", "fi", "fe", "ooi", "ooe", "fin")}
+    somas.update({
+        "fi_sp": float(contas.loc[contas["conta"].str.startswith("71705"), "saldo"].sum()),
+        "fe_sp": float(contas.loc[contas["conta"].str.startswith("81919"), "saldo"].sum()),
+        "IEA": iea, "versao": versao, "meses": meses_no_semestre(data_base),
         "detalhe": resultado[["conta", "nome_conta", "saldo", "componente"]],
-    }
+        "nao_mapeadas": resultado.loc[resultado["componente"] == "nao_mapeado", ["conta", "nome_conta", "saldo"]],
+    })
+    return somas
+
+
+def _deslocar(data_base: str, meses: int) -> str:
+    ano, mes = int(data_base[:4]), int(data_base[4:6])
+    total = ano * 12 + (mes - 1) - meses
+    return f"{total // 12}{total % 12 + 1:02d}"
+
+
+def semestre_de_referencia(data_base: str) -> str:
+    """Último fechamento semestral (jun/dez) até a data-base — art. 2º da Res. BCB 356."""
+    ano, mes = int(data_base[:4]), int(data_base[4:6])
+    if mes == 12:
+        return f"{ano}12"
+    if mes >= 6:
+        return f"{ano}06"
+    return f"{ano - 1}12"
+
+
+def periodos_anuais(data_base: str, historico: dict) -> list[tuple[str, str]]:
+    """Até 3 períodos anuais completos (dois semestres) disponíveis no histórico."""
+    ref = semestre_de_referencia(data_base)
+    periodos = []
+    for k in range(3):
+        s2 = _deslocar(ref, 12 * k)
+        s1 = _deslocar(s2, 6)
+        if s1 in historico and s2 in historico:
+            periodos.append((s1, s2))
+    return periodos
+
+
+def _dre_dos_periodos(periodos, historico) -> pd.DataFrame:
+    linhas = []
+    for s1, s2 in periodos:
+        a, b = historico[s1], historico[s2]
+        linhas.append({
+            "periodo": f"{s1[4:]}/{s1[:4]} + {s2[4:]}/{s2[:4]}",
+            "receitas_juros": a["ii"] + b["ii"], "despesas_juros": abs(a["ie"] + b["ie"]),
+            "ativos_rentaveis_medios": (a["IEA"] + b["IEA"]) / 2,  # art. 6º, parágrafo único
+            "dividendos": a["di"] + b["di"],
+            "receitas_servicos": a["fi"] + b["fi"], "despesas_servicos": abs(a["fe"] + b["fe"]),
+            "receitas_servicos_pagamento": a["fi_sp"] + b["fi_sp"],
+            "despesas_servicos_pagamento": abs(a["fe_sp"] + b["fe_sp"]),
+            "outras_receitas_operacionais": a["ooi"] + b["ooi"],
+            "outras_despesas_operacionais": abs(a["ooe"] + b["ooe"]),
+            "resultado_carteira_negociacao": a["fin"] + b["fin"],
+            "resultado_carteira_bancaria": 0.0,
+        })
+    return pd.DataFrame(linhas)
+
+
+def calcular_bi_balancete(contas: pd.DataFrame, data_base: str, parametros: dict,
+                          historico: dict | None = None, sujeita_rwasp: bool = False) -> dict:
+    atual = somas_bi(contas, data_base)
+    periodos = periodos_anuais(data_base, historico or {})
+
+    if periodos:
+        dre = _dre_dos_periodos(periodos, historico)
+        comp = calcular_componentes_bi(dre, parametros, sujeita_rwasp, periodos_exigidos=None)
+        legado = [p for par in periodos for p in par if historico[p]["versao"] == "legado"]
+        metodo = (f"média de {len(periodos)} período(s) anual(is): "
+                  + "; ".join(dre["periodo"]) + (" — inclui plano Cosif anterior" if legado else ""))
+        return {"metodo": metodo, "periodos": len(periodos), "meses_apurados": None,
+                "fator_anualizacao": None, "IEA": float(dre["ativos_rentaveis_medios"].mean()),
+                "margem_juros_anual": comp["margem_juros_media"], "teto_ildc": comp["teto_ildc"],
+                "ILDC": comp["ILDC"], "SC": comp["SC"], "FC": comp["FC"], "BI": comp["BI"],
+                "dre_periodos": dre, "contas_nao_mapeadas": atual["nao_mapeadas"],
+                "detalhe": atual["detalhe"]}
+
+    # Sem histórico: anualiza o período corrente
+    fator = 12 / atual["meses"]
+    anual = {k: atual[k] * fator for k in ("ii", "ie", "di", "fi", "fe", "ooi", "ooe", "fin", "fi_sp", "fe_sp")}
+    fi, fe = anual["fi"], anual["fe"]
+    if sujeita_rwasp:
+        fi, fe = fi - anual["fi_sp"], fe - anual["fe_sp"]
+    margem = abs(anual["ii"] + anual["ie"])
+    teto = parametros["risco_operacional"]["teto_ildc_sobre_iea"] * atual["IEA"]
+    ildc = min(margem, teto) + anual["di"]
+    sc = max(fi, abs(fe)) + max(anual["ooi"], abs(anual["ooe"]))
+    fc = abs(anual["fin"])
+    return {"metodo": f"período corrente ({atual['meses']} meses) anualizado x{fator:.0f}",
+            "periodos": 0, "meses_apurados": atual["meses"], "fator_anualizacao": fator,
+            "IEA": atual["IEA"], "margem_juros_anual": margem, "teto_ildc": teto,
+            "ILDC": ildc, "SC": sc, "FC": fc, "BI": ildc + sc + fc,
+            "dre_periodos": None, "contas_nao_mapeadas": atual["nao_mapeadas"], "detalhe": atual["detalhe"]}
 
 
 # ---------------------------------------------------------------------------
 # Regime banco / conglomerado
 # ---------------------------------------------------------------------------
 
-def calcular_banco(m: pd.DataFrame, ident: dict, parametros: dict, inst: dict) -> dict:
+def calcular_banco(m: pd.DataFrame, ident: dict, parametros: dict, inst: dict,
+                   historico: dict | None = None) -> dict:
     pb = parametros["balancete_banco"]
     premissas = []
 
@@ -210,11 +306,15 @@ def calcular_banco(m: pd.DataFrame, ident: dict, parametros: dict, inst: dict) -
         {"conta": "18825000", "nome_conta": "Créditos tributários não deduzidos", "saldo": dta - dta_deduzido,
          "destino": "exposicao", "classe": "dta_nao_deduzido", "ead": dta - dta_deduzido, "fcc": 1.0,
          "observacao": "Parcela não deduzida do CP"},
+        {"conta": "18200000", "nome_conta": "Carteira de câmbio líquida (ativa − passiva)",
+         "saldo": max(0.0, _soma(m, "cambio_ativo") - _soma(m, "cambio_passivo")), "destino": "exposicao",
+         "classe": "corporativo", "ead": max(0.0, _soma(m, "cambio_ativo") - _soma(m, "cambio_passivo")),
+         "fcc": 1.0, "observacao": "Plano Cosif anterior: câmbio comprado e vendido a liquidar compensados"},
         {"conta": "21200000", "nome_conta": "Participações não deduzidas", "saldo": participacoes - part_deduzida,
          "destino": "exposicao", "classe": "acoes_e_participacoes", "ead": participacoes - part_deduzida,
          "fcc": 1.0, "observacao": "Parcela não deduzida do CP"},
     ])
-    expos = pd.concat([expos, extras], ignore_index=True)
+    expos = pd.concat([expos, extras[extras["ead"] != 0]], ignore_index=True)
     expos["fpr"] = expos["classe"].map(fpr)
     if expos["fpr"].isna().any():
         raise ValueError(f"Classe sem FPR: {sorted(set(expos.loc[expos['fpr'].isna(), 'classe']))}")
@@ -222,16 +322,18 @@ def calcular_banco(m: pd.DataFrame, ident: dict, parametros: dict, inst: dict) -
     rwacpad = float(expos["rwa"].sum())
 
     # RWAOPAD
-    bi = calcular_bi_balancete(m, ident["data_base"], parametros)
+    sujeita_sp = inst["segmento"] != "S1"  # RWASP: Tipo 1 em S2-S5
+    bi = calcular_bi_balancete(m, ident["data_base"], parametros, historico, sujeita_sp)
     bic = calcular_bic(bi["BI"], parametros["risco_operacional"]["faixas_bic"])
     fator_f = parametros["requerimentos_minimos"]["patrimonio_referencia"]
     rwaopad = bic / fator_f
-    premissas.append(
-        f"RWAOPAD: BI de um único período ({bi['meses_apurados']} meses) anualizado x{bi['fator_anualizacao']:.0f}; "
-        "a norma usa a média de 3 anos. ILM = 1 (base de perdas não é pública).")
-
-    # RWASP (Tipo 1 em S2-S5)
-    sujeita_sp = inst["segmento"] != "S1"
+    premissas.append(f"RWAOPAD: BI pela {bi['metodo']}"
+                     + ("" if bi["periodos"] == 3 else " — a norma usa 3 períodos anuais")
+                     + ". ILM = 1 (base de perdas não é pública).")
+    if versao_cosif(ident["data_base"]) == "legado":
+        premissas.append("Plano Cosif anterior (até 12/2024), publicado até o 3º nível: compromissos de crédito, "
+                         "títulos elegíveis a capital (Nível II/Complementar) e créditos tributários não são "
+                         "identificáveis; carteira de câmbio compensada. Quebra de série em 01/2025.")
     moe = (parametros["instituicao_pagamento"]["moe_transacoes"] * _soma(m, "base_moe_transacoes")
            + parametros["instituicao_pagamento"]["moe_saldo"] * _soma(m, "base_moe_saldo"))
     rwasp = moe / fator_f if sujeita_sp else 0.0
@@ -345,16 +447,23 @@ def calcular_ip(m: pd.DataFrame, ident: dict, parametros: dict, inst: dict) -> d
 # Orquestração
 # ---------------------------------------------------------------------------
 
-def analisar_balancete(caminho: str | Path, parametros: dict) -> dict:
+def analisar_balancete(caminho: str | Path, parametros: dict, historico: dict | None = None) -> dict:
     balancete = ler_balancete(caminho)
     ident = identificacao(balancete)
     regime = detectar_regime(ident)
     inst = parametros_instituicao(ident["cnpj"])
 
-    mapa = carregar_mapeamento("mapeamento_cosif_ip.csv" if regime == "ip" else "mapeamento_cosif_banco.csv")
+    versao = versao_cosif(ident["data_base"])
+    mapa = carregar_mapeamento("mapeamento_cosif_ip.csv" if regime == "ip" else "mapeamento_cosif_banco.csv",
+                               versao)
     m = mapear(analiticas(balancete), mapa, "padrao" if regime == "ip" else "outros_ativos")
 
-    resultado = (calcular_ip if regime == "ip" else calcular_banco)(m, ident, parametros, inst)
+    if regime == "ip":
+        resultado = calcular_ip(m, ident, parametros, inst)
+        if versao == "legado":
+            resultado["premissas"].append("Plano Cosif anterior: aplicado o mapeamento atual de IP (nível 3).")
+    else:
+        resultado = calcular_banco(m, ident, parametros, inst, historico)
     cnpj_original = ident["cnpj"]
     ident = anonimizar(ident, regime, inst, parametros)
     if regime == "banco" and ident["documento"] == "4010":
@@ -368,6 +477,6 @@ def analisar_balancete(caminho: str | Path, parametros: dict) -> dict:
 
     sem_mapa = m[m["observacao"].str.startswith("SEM MAPEAMENTO")]
     conc = conciliar(balancete)
-    return {**resultado, "identificacao": ident, "cnpj_original": cnpj_original, "instituicao": inst, "mapeamento": m,
+    return {**resultado, "identificacao": ident, "cnpj_original": cnpj_original, "versao_cosif": versao, "instituicao": inst, "mapeamento": m,
             "sem_mapeamento": sem_mapa,
             "conciliacao": conc[~conc["grupo"].isin(["3", "9"])]}
