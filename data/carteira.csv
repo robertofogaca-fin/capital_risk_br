@@ -1,0 +1,9 @@
+id_operacao,contraparte,produto,classe_exposicao,saldo_balanco,saldo_off,tipo_off
+1,Tesouro Nacional,LTN,soberano_brasil,5000000,0,nenhum
+2,Banco B,CDB interbancário,instituicao_financeira,2000000,0,nenhum
+3,Empresa A,Capital de giro,corporativo,8000000,500000,limite_nao_utilizado
+4,Empresa C,Capital de giro PME,corporativo_pme,3000000,0,nenhum
+5,Clientes PF,Cartão de crédito,varejo,4000000,6000000,limite_cartao
+6,Clientes PF,Financiamento imobiliário,imobiliario_residencial,3000000,0,nenhum
+7,Empresa D,Fiança bancária,corporativo,0,1000000,garantia_prestada
+8,Empresa E,Capital de giro em atraso,em_atraso,500000,0,nenhum

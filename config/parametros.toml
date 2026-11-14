@@ -1,0 +1,36 @@
+# Parâmetros regulatórios — CapitalRiskBR
+# Base: Resolução CMN 4.958/2021 (requerimentos mínimos e ACP),
+#       Resolução CMN 4.955/2021 (composição do PR),
+#       Resolução BCB 229/2022 (RWACPAD).
+# ATENÇÃO: pesos e FCC abaixo são DIDÁTICOS. A Res. BCB 229 detalha os
+# fatores por categoria da contraparte, prazo, LTV, rating etc.
+
+[requerimentos_minimos]          # % do RWA
+capital_principal = 0.045        # art. 6º Res. CMN 4.958
+nivel_1 = 0.060                  # art. 5º
+patrimonio_referencia = 0.080    # art. 4º (fator F)
+
+[adicional_capital_principal]    # ACP — cumprido com Capital Principal
+conservacao = 0.025
+contraciclico = 0.000            # definido pelo BCB; conferir valor vigente
+sistemico = 0.000                # aplicável a bancos de importância sistêmica (S1)
+
+# Fator de ponderação de risco (FPR) por classe de exposição
+[fpr_por_classe]
+soberano_brasil = 0.00                       # títulos federais em reais
+instituicao_financeira = 0.40                # na norma varia de 20% a 150% (categoria A/B/C e prazo)
+corporativo = 1.00
+corporativo_pme = 0.85
+varejo = 0.75
+imobiliario_residencial = 0.50               # na norma varia conforme LTV
+em_atraso = 1.50
+outros_ativos = 1.00
+participacoes_e_creditos_tributarios = 2.50
+
+# Fator de conversão de crédito (FCC) para exposições fora do balanço
+[fcc_por_tipo]
+nenhum = 0.00
+limite_cartao = 0.10
+limite_nao_utilizado = 0.40
+garantia_prestada = 1.00
+carta_credito_importacao = 0.20

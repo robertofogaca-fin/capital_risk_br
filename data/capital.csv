@@ -1,0 +1,8 @@
+componente,nivel,valor
+Capital social,capital_principal,1500000
+Reservas de lucros,capital_principal,400000
+Lucros acumulados,capital_principal,100000
+Ativos intangíveis,ajuste_prudencial,150000
+Créditos tributários de diferenças temporárias,ajuste_prudencial,50000
+Instrumentos elegíveis ao capital complementar,capital_complementar,200000
+Dívida subordinada elegível ao Nível II,nivel_2,300000
