@@ -132,5 +132,11 @@ tests/                       testes com valores calculados à mão
 
 Projeto educacional. A segmentação S5, os conglomerados Tipo 2/3 (Res. BCB 197 a 201/2022), as regras para instituições novas (art. 20 da Res. BCB 356) e as rubricas Cosif do BI estão fora do escopo. Os FPR e FCC em `parametros.toml` são simplificados: a Res. BCB 229 os diferencia por categoria da contraparte, prazo, LTV, mitigadores e outros critérios. Não use para reporte regulatório.
 
+## Licença
+
+Código distribuído sob a licença [MIT](LICENSE): uso, cópia e adaptação livres, mantendo o aviso de copyright.
+
+Os balancetes Cosif são dados públicos do Banco Central do Brasil e não fazem parte deste repositório. Os resultados são estimativas educacionais e não constituem apuração regulatória, recomendação de investimento ou opinião sobre a situação de qualquer instituição.
+
 ---
 Roberto Fogaça · RF Analytics
